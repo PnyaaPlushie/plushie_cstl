@@ -1,0 +1,31 @@
+####################################################################################
+# PlushieCStl Config module
+# Provides the "Standard library" for plushie, this is the functions and modules 
+# that I like to reuse a lot
+#
+# NOTE: This is the "LocalDev" install version. This is used for when you're 
+# using cstl and developing something inside cstl at the same time. It will set the
+# include dirs and values to this source dir 
+#
+# Installs using this config shouldn't be used for distributing 
+#
+# Defines :
+#    PlushieCStl_INCLUDE_DIRS
+#    PlushieCStl_FOUND
+####################################################################################
+
+set(PlushieCStlRoot "@_plushie_cstl_root@")
+set(PlushieCStl_INCLUDE_DIRS ${PlushieCStlRoot}/include)
+set(PlushieCStl_FOUND ON)
+
+if(NOT TARGET Plushie::CStl)
+    message(STATUS "[Plushie::CStl] Using local dev install located at ${PlushieCStlRoot}")
+
+    add_library(plushie_cstl INTERFACE)
+    add_library(Plushie::CStl ALIAS plushie_cstl)
+
+    target_include_directories(plushie_cstl INTERFACE 
+        ${PlushieCStlRoot}/include)
+endif()
+
+

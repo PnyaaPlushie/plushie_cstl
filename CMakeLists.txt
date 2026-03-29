@@ -17,52 +17,67 @@ set_target_properties(plushie_cstl PROPERTIES
 	EXPORT_NAME CStl)
 
 target_include_directories(plushie_cstl INTERFACE 
+	# Used with `add_subdirectory` or `FetchContent` 
 	$<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include>
-    $<INSTALL_INTERFACE:include>)
+
+	# Used with find_package from install 
+    $<INSTALL_INTERFACE:include>) 
 
 ###############################################################################################
 # Install logic
 ###############################################################################################
 
-if(${PLUSHIE_CSTL_INCLUDE_INSTALL})
-	include(CMakePackageConfigHelpers)
-	include(GNUInstallDirs)
-	
-	# In local dev install mode, we don't install the source files, as that will
-	# overwrite the developers source files. We also need to make the cmake 
-	# install destination to be this current source file dir
-	if(${PLUSHIE_CSTL_INSTALL_FOR_LOCAL_DEV})
-		set(Plushie_INSTALL_CMAKEDIR ".")
-	else()
-		install(DIRECTORY include/plushie DESTINATION ${CMAKE_INSTALL_INCLUDEDIR})
-		set(Plushie_INSTALL_CMAKEDIR "${CMAKE_INSTALL_LIBDIR}/cmake/plushie")
-	endif()
+# Install is the last bit of the file
+if(NOT ${PLUSHIE_CSTL_INCLUDE_INSTALL})
+	return()
+endif()
 
-	# Export the targets cmake
+include(CMakePackageConfigHelpers)
+include(GNUInstallDirs)
 	
-	install(TARGETS plushie_cstl EXPORT PlushieCStlTargets)
+# Create an export set for Plushie::CStl 
+install(TARGETS plushie_cstl EXPORT PlushieCStlTargets)
+
+if(NOT ${PLUSHIE_CSTL_INSTALL_FOR_LOCAL_DEV})
+	# Performing a regular portable install, this includes copying all of the 
+	# header files, and generating the regular packaging files
+
+	# Copy all header files in the include directory 
+	install(DIRECTORY include/plushie DESTINATION ${CMAKE_INSTALL_INCLUDEDIR})
+
+	# Relocatable targets file 
 	install(EXPORT PlushieCStlTargets
+		NAMESPACE Plushie::
 		FILE PlushieCStlTargets.cmake 
-		NAMESPACE Plushie:: 
-		DESTINATION ${Plushie_INSTALL_CMAKEDIR})
-
-	# Generate the versions file in the binary dir
-	write_basic_package_version_file(
-		"${CMAKE_CURRENT_BINARY_DIR}/PlushieCStlConfigVersion.cmake" 
-		VERSION ${PlushieCstlVersion}
-		COMPATIBILITY SameMajorVersion)
+		DESTINATION ${CMAKE_INSTALL_LIBDIR}/cmake/plushie)
 
 	# Use the .in template to generate the exported config
 	configure_package_config_file(
 		"${CMAKE_CURRENT_SOURCE_DIR}/cmake/PlushieCStlConfig.cmake.in"
 		"${CMAKE_CURRENT_BINARY_DIR}/PlushieCStlConfig.cmake"
-		INSTALL_DESTINATION ${Plushie_INSTALL_CMAKEDIR}
+		INSTALL_DESTINATION ${CMAKE_INSTALL_LIBDIR}/cmake/plushie
 		PATH_VARS CMAKE_INSTALL_INCLUDEDIR)
 
-	# Install the config files
+	# Actually export the config file
 	install(FILES
 		"${CMAKE_CURRENT_BINARY_DIR}/PlushieCStlConfig.cmake"
-		"${CMAKE_CURRENT_BINARY_DIR}/PlushieCStlConfigVersion.cmake"
-		DESTINATION ${Plushie_INSTALL_CMAKEDIR})
+		DESTINATION ${CMAKE_INSTALL_LIBDIR}/cmake/plushie)
 
+else()
+	# Performing a dev local install, skips copying any files, it just aims to 
+	# place the packaging config file and point them at this source dir
+
+	# Use regular configure_file as we're making a "good enough" fake config
+	set(_plushie_cstl_root ${CMAKE_CURRENT_LIST_DIR})
+	configure_file(
+		"${CMAKE_CURRENT_SOURCE_DIR}/cmake/PlushieCStlConfig_LocalDev.cmake.in"
+		"${CMAKE_CURRENT_BINARY_DIR}/PlushieCStlConfig.cmake"
+		@ONLY)
+
+	# Actually export the config file
+	install(FILES
+		"${CMAKE_CURRENT_BINARY_DIR}/PlushieCStlConfig.cmake"
+		DESTINATION ${CMAKE_CURRENT_LIST_DIR})
 endif()
+
+
