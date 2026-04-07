@@ -21,11 +21,11 @@ set(PlushieCStl_FOUND ON)
 if(NOT TARGET Plushie::CStl)
     message(STATUS "[Plushie::CStl] Using local dev install located at ${PlushieCStlRoot}")
 
-    add_library(plushie_cstl INTERFACE)
-    add_library(Plushie::CStl ALIAS plushie_cstl)
+    option(PLUSHIE_CSTL_BUILD_HEADER_ONLY "Include the header only library version" @PLUSHIE_CSTL_BUILD_HEADER_ONLY@ )
+    option(PLUSHIE_CSTL_BUILD_SHARED      "Include the shared library version"      @PLUSHIE_CSTL_BUILD_SHARED@)
+    option(PLUSHIE_CSTL_BUILD_STATIC      "Include the static library version"      @PLUSHIE_CSTL_BUILD_STATIC@)
 
-    target_include_directories(plushie_cstl INTERFACE 
-        ${PlushieCStlRoot}/include)
+    add_subdirectory(${PlushieCStlRoot} _plushie/cstl)
 endif()
 
 
